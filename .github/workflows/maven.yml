@@ -1,3 +1,4 @@
+
 name: Java CI with Maven
 on:
   push:
@@ -5,35 +6,25 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
-  test:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3  # 更新为v3版本
+    - uses: actions/checkout@v3
     - name: Set up JDK 8
-      uses: actions/setup-java@v3  # 更新为v3版本
+      uses: actions/setup-java@v3
       with:
         java-version: '8'
-        distribution: 'temurin'  # 更新为推荐的发行版
-        cache: maven  # 添加Maven缓存以加速构建
-    - name: Test with Maven
-      run: mvn -B test -Ptest --file pom.xml
-      continue-on-error: true  # 允许测试失败但继续执行后续步骤
+        distribution: 'temurin'
+        cache: maven
     
-  build:
-    runs-on: ubuntu-latest
-    needs: test  # 等待测试作业完成后再执行，但不管测试成功还是失败
-    steps:
-    - uses: actions/checkout@v3  # 更新为v3版本
-    - name: Set up JDK 8
-      uses: actions/setup-java@v3  # 更新为v3版本
-      with:
-        java-version: '8'
-        distribution: 'temurin'  # 更新为推荐的发行版
-        cache: maven  # 添加Maven缓存以加速构建
-    - name: Build with Maven
+    # 首先执行测试，但即使失败也继续执行
+    - name: Test with Maven
+      run: mvn -B test -Ptest --file pom.xml || true
+    
+    # 然后构建JAR包，跳过测试
+    - name: Build JAR with Maven
       run: mvn -B package -Pbuild --file pom.xml
-    - name: Upload JARs
-      uses: actions/upload-artifact@v3
-      with:
-        name: commons-lang-test
-        path: target/*.jar
+    
+    # 列出生成的JAR文件
+    - name: List generated JARs
+      run: ls -la target/*.jar
